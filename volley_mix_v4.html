@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Volley Mix 4×4 — V4</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#182230}
+header{background:#173b67;color:white;padding:22px 18px;text-align:center}
+header h1{margin:0 0 6px;font-size:26px}header p{margin:0;opacity:.9}
+nav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;background:white;padding:10px;position:sticky;top:0;z-index:5;box-shadow:0 2px 8px #0001}
+nav button{border:0;border-radius:10px;padding:11px 15px;background:#e8eef6;cursor:pointer;font-weight:700}
+nav button.active{background:#173b67;color:white}
+main{max-width:1100px;margin:20px auto;padding:0 14px}.tab{display:none}.tab.active{display:block}
+.card{background:white;border-radius:15px;padding:18px;margin-bottom:16px;box-shadow:0 2px 10px #0000000d}
+h2{margin-top:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+label{font-weight:700;font-size:14px}input,select{width:100%;padding:10px;border:1px solid #ccd6e3;border-radius:9px;margin-top:5px;background:white}
+button.primary{background:#1769aa;color:white;border:0;border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer}
+button.danger{background:#c62828;color:white;border:0;border-radius:9px;padding:8px 10px;cursor:pointer}
+button.secondary{background:#e9eef5;border:0;border-radius:9px;padding:9px 12px;cursor:pointer}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.notice{padding:12px;border-radius:10px;background:#fff5d8;margin:10px 0}.ok{background:#e4f6ea}
+.player{border:1px solid #dce4ee;border-radius:11px;padding:12px;margin:8px 0;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eaf0f7;font-size:12px;margin:2px}.badge.f{background:#ffe4ef}.badge.h{background:#e3efff}.small{font-size:13px;color:#64748b}
+.checkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:7px;margin-top:12px}
+.check{border:1px solid #d9e2ec;padding:9px;border-radius:9px;display:flex;gap:8px;align-items:center}.check input{width:auto;margin:0}
+.teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.team{background:white;border:2px solid #dce6f1;border-radius:14px;padding:15px}.team h3{margin:0 0 8px}
+.member{padding:8px 0;border-bottom:1px solid #edf1f5}.member:last-child{border-bottom:0}
+.sub{font-size:12px;color:#a45d00;font-weight:700}.court{font-weight:700}
+.empty{color:#6b7280;text-align:center;padding:25px}
+.editbox{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;flex:1}
+footer{text-align:center;color:#718096;font-size:12px;padding:20px}
+</style>
+</head>
+<body>
+<header>
+<h1>🏐 Volley Mix 4×4 — V4</h1>
+<p>Création d'équipes équilibrées • 4 joueurs sur le terrain • rotation des remplaçants</p>
+</header>
+<nav>
+<button class="tabBtn active" data-tab="players">👥 Joueurs</button>
+<button class="tabBtn" data-tab="session">🎯 Session</button>
+<button class="tabBtn" data-tab="history">📚 Historique</button>
+</nav>
+
+<main>
+<section id="players" class="tab active">
+<div class="card">
+<h2>Ajouter un joueur</h2>
+<div class="grid">
+<label>Prénom<input id="firstName" placeholder="Ex. Thomas"></label>
+<label>Niveau<select id="level"><option>Niveau 1</option><option>Niveau 2</option><option>Niveau 3</option><option>Compétiteur</option></select></label>
+<label>Genre<select id="gender"><option value="F">Femme</option><option value="H">Homme</option></select></label>
+<label>Poste<select id="position"><option>Passeur</option><option>Central</option><option>Réception/Attaque</option><option>Polyvalent</option></select></label>
+</div>
+<div class="actions"><button class="primary" onclick="addPlayer()">Ajouter le joueur</button></div>
+<p class="small">Maximum 70 joueurs dans la base.</p>
+</div>
+<div class="card">
+<h2>Joueurs (<span id="playerCount">0</span>/70)</h2>
+<div id="playerList"></div>
+</div>
+</section>
+
+<section id="session" class="tab">
+<div class="card">
+<h2>Créer une session</h2>
+<div class="grid">
+<label>Date<input type="date" id="sessionDate"></label>
+<label>Femmes minimum sur le terrain / équipe<input id="minWomen" type="number" min="1" value="1"></label>
+</div>
+<div class="notice">Les équipes sont normalement de 4 joueurs. Lorsque nécessaire, une équipe de 5 est créée : <b>4 sur le terrain + 1 remplaçant</b>. Dans les équipes de 4, il y a au maximum 1 passeur et 1 central. Cette limite est relâchée dans les équipes de 5.</div>
+<h3>Joueurs présents (<span id="selectedCount">0</span>/30)</h3>
+<div id="sessionPlayers" class="checkgrid"></div>
+<div class="actions">
+<button class="primary" onclick="generateTeams()">🎲 Générer les équipes</button>
+<button class="secondary" onclick="selectAll30()">Sélectionner jusqu'à 30</button>
+<button class="secondary" onclick="clearSelection()">Tout désélectionner</button>
+</div>
+<div id="sessionMessage"></div>
+</div>
+<div id="result"></div>
+</section>
+
+<section id="history" class="tab">
+<div class="card">
+<h2>Historique</h2>
+<p class="small">L'historique est enregistré dans le navigateur de cet appareil. Il sert notamment à éviter de remettre trop souvent les mêmes joueurs ensemble et à faire tourner les remplaçants.</p>
+<div class="actions"><button class="danger" onclick="clearHistory()">Effacer l'historique</button></div>
+<div id="historyList"></div>
+</div>
+</section>
+</main>
+<footer>Volley Mix 4×4 — données stockées localement dans le navigateur.</footer>
+
+<script>
+const KEY="volley_mix_v4_recreated";
+let players=JSON.parse(localStorage.getItem(KEY+"_players")||"[]");
+let history=JSON.parse(localStorage.getItem(KEY+"_history")||"[]");
+let currentTeams=[];
+
+document.querySelectorAll(".tabBtn").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll(".tabBtn").forEach(x=>x.classList.remove("active"));
+ document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+ b.classList.add("active");document.getElementById(b.dataset.tab).classList.add("active");
+ if(b.dataset.tab==="session") renderSession();
+ if(b.dataset.tab==="history") renderHistory();
+});
+document.getElementById("sessionDate").value=new Date().toISOString().slice(0,10);
+
+function save(){localStorage.setItem(KEY+"_players",JSON.stringify(players));localStorage.setItem(KEY+"_history",JSON.stringify(history))}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+
+function addPlayer(){
+ if(players.length>=70)return alert("Maximum de 70 joueurs atteint.");
+ const first=document.getElementById("firstName").value.trim();
+ if(!first)return alert("Indique le prénom.");
+ players.push({id:crypto.randomUUID(),first,level:document.getElementById("level").value,gender:document.getElementById("gender").value,position:document.getElementById("position").value,subUses:0});
+ save();document.getElementById("firstName").value="";renderPlayers();renderSession();
+}
+function renderPlayers(){
+ document.getElementById("playerCount").textContent=players.length;
+ const box=document.getElementById("playerList");
+ if(!players.length){box.innerHTML='<div class="empty">Aucun joueur pour le moment.</div>';return}
+ box.innerHTML=players.map(p=>`
+ <div class="player" id="p_${p.id}">
+  <div><b>${esc(p.first)}</b>
+   <span class="badge ${p.gender==="F"?"f":"h"}">${p.gender==="F"?"Femme":"Homme"}</span>
+   <span class="badge">${esc(p.level)}</span><span class="badge">${esc(p.position)}</span>
+  </div>
+  <div class="actions"><button class="secondary" onclick="editPlayer('${p.id}')">✏️ Modifier</button><button class="danger" onclick="deletePlayer('${p.id}')">Supprimer</button></div>
+ </div>`).join("");
+}
+function editPlayer(id){
+ const p=players.find(x=>x.id===id);if(!p)return;
+ const el=document.getElementById("p_"+id);
+ el.innerHTML=`<div class="editbox">
+ <label>Prénom<input id="e_name_${id}" value="${esc(p.first)}"></label>
+ <label>Niveau<select id="e_level_${id}">${["Niveau 1","Niveau 2","Niveau 3","Compétiteur"].map(x=>`<option ${x===p.level?"selected":""}>${x}</option>`).join("")}</select></label>
+ <label>Genre<select id="e_gender_${id}"><option value="F" ${p.gender==="F"?"selected":""}>Femme</option><option value="H" ${p.gender==="H"?"selected":""}>Homme</option></select></label>
+ <label>Poste<select id="e_pos_${id}">${["Passeur","Central","Réception/Attaque","Polyvalent"].map(x=>`<option ${x===p.position?"selected":""}>${x}</option>`).join("")}</select></label>
+ </div><div class="actions"><button class="primary" onclick="saveEdit('${id}')">Enregistrer</button><button class="secondary" onclick="renderPlayers()">Annuler</button></div>`;
+}
+function saveEdit(id){
+ const p=players.find(x=>x.id===id);if(!p)return;
+ p.first=document.getElementById("e_name_"+id).value.trim()||p.first;
+ p.level=document.getElementById("e_level_"+id).value;p.gender=document.getElementById("e_gender_"+id).value;p.position=document.getElementById("e_pos_"+id).value;
+ save();renderPlayers();renderSession();
+}
+function deletePlayer(id){
+ const p=players.find(x=>x.id===id);if(!p)return;
+ if(confirm("Supprimer "+p.first+" ?")){players=players.filter(x=>x.id!==id);save();renderPlayers();renderSession()}
+}
+function renderSession(){
+ const box=document.getElementById("sessionPlayers");
+ const selected=new Set([...document.querySelectorAll(".sessionCheck:checked")].map(x=>x.value));
+ box.innerHTML=players.length?players.map(p=>`<label class="check"><input class="sessionCheck" type="checkbox" value="${p.id}" ${selected.has(p.id)?"checked":""} onchange="updateCount()"> <span><b>${esc(p.first)}</b><br><span class="small">${esc(p.level)} · ${esc(p.position)} · ${p.gender==="F"?"F":"H"}</span></span></label>`).join(""):'<div class="empty">Ajoute d’abord des joueurs.</div>';
+ updateCount();
+}
+function updateCount(){document.getElementById("selectedCount").textContent=document.querySelectorAll(".sessionCheck:checked").length}
+function selectAll30(){document.querySelectorAll(".sessionCheck").forEach((c,i)=>c.checked=i<30);updateCount()}
+function clearSelection(){document.querySelectorAll(".sessionCheck").forEach(c=>c.checked=false);updateCount()}
+
+function sizesFor(n){
+ if(n===4)return[4];if(n===5)return[5];if(n<8||n===11)return null;
+ const teams=Math.ceil(n/5),k5=5*teams-n,k4=teams-k5;
+ if(k4<0||4*k4+5*k5!==n)return null;
+ return [...Array(k4).fill(4),...Array(k5).fill(5)];
+}
+function pairCount(a,b){
+ let c=0;for(const h of history)for(const t of h.teams||[])for(let i=0;i<t.length;i++)for(let j=i+1;j<t.length;j++)if((t[i]===a&&t[j]===b)||(t[i]===b&&t[j]===a))c++;
+ return c;
+}
+function subCount(id){return players.find(p=>p.id===id)?.subUses||0}
+function shuffle(a){return a.slice().sort(()=>Math.random()-.5)}
+
+function scoreTeams(teams){
+ let s=0;
+ const women=teams.map(t=>t.active.filter(id=>getP(id).gender==="F").length);
+ const mean=women.reduce((a,b)=>a+b,0)/women.length;
+ s+=women.reduce((a,b)=>a+(b-mean)**2,0)*900;
+ for(const t of teams){
+  const ps=t.ids.map(getP);
+  const levels={"Niveau 1":1,"Niveau 2":2,"Niveau 3":3,"Compétiteur":4};
+  const vals=ps.map(p=>levels[p.level]);
+  const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
+  s+=vals.reduce((a,b)=>a+(b-avg)**2,0)*55;
+  const hasSetter=ps.some(p=>p.position==="Passeur"||p.position==="Polyvalent");
+  if(!hasSetter)s+=120;
+  if(t.size===4){
+   s+=Math.max(0,ps.filter(p=>p.position==="Passeur").length-1)*500;
+   s+=Math.max(0,ps.filter(p=>p.position==="Central").length-1)*500;
+  }
+  for(let i=0;i<ps.length;i++)for(let j=i+1;j<ps.length;j++)s+=pairCount(ps[i].id,ps[j].id)*45;
+  if(t.size===5)s+=subCount(t.sub)*35;
+ }
+ return s;
+}
+function getP(id){return players.find(p=>p.id===id)}
+
+function buildCandidate(ids,sizes,minW){
+ const shuffled=shuffle(ids), teams=sizes.map(size=>({size,ids:[],active:[],sub:null}));
+ // Greedy placement with many random restarts; female distribution is considered by sorting women first.
+ const order=shuffle(shuffled).sort((a,b)=>getP(b).gender==="F"- (getP(a).gender==="F"));
+ for(const id of order){
+  let best=null,bestScore=Infinity;
+  for(let ti=0;ti<teams.length;ti++){
+   const t=teams[ti];if(t.ids.length>=t.size)continue;
+   const p=getP(id);let penalty=0;
+   if(t.size===4&&p.position==="Passeur"&&t.ids.some(x=>getP(x).position==="Passeur"))penalty+=8000;
+   if(t.size===4&&p.position==="Central"&&t.ids.some(x=>getP(x).position==="Central"))penalty+=8000;
+   if(p.gender==="F" && t.ids.filter(x=>getP(x).gender==="F").length>=Math.ceil(shuffled.filter(x=>getP(x).gender==="F").length/teams.length)+1)penalty+=300;
+   penalty+=t.ids.reduce((z,x)=>z+pairCount(id,x)*100,0);
+   penalty+=Math.random()*500;
+   if(penalty<bestScore){bestScore=penalty;best=ti}
+  }
+  if(best===null)return null;teams[best].ids.push(id);
+ }
+ // Repair/choose substitute in teams of five: ensure minimum women active whenever feasible.
+ for(const t of teams){
+  if(t.size===5){
+   const candidates=t.ids.filter(id=>{
+    const active=t.ids.filter(x=>x!==id);
+    return active.filter(x=>getP(x).gender==="F").length>=minW;
+   });
+   t.sub=candidates.sort((a,b)=>subCount(a)-subCount(b))[0]||t.ids[0];
+   t.active=t.ids.filter(x=>x!==t.sub);
+  }else t.active=t.ids.slice();
+  if(t.active.filter(x=>getP(x).gender==="F").length<minW)return null;
+ }
+ return teams;
+}
+function generateTeams(){
+ const ids=[...document.querySelectorAll(".sessionCheck:checked")].map(x=>x.value);
+ const minW=Math.max(1,parseInt(document.getElementById("minWomen").value)||1);
+ if(ids.length<4||ids.length>30)return showMsg("Choisis entre 4 et 30 joueurs.","notice");
+ const sizes=sizesFor(ids.length);
+ if(!sizes)return showMsg("Avec ce nombre de joueurs, une répartition en équipes de 4/5 n'est pas possible tout en respectant les règles. Ajoute ou retire 1 joueur.","notice");
+ const totalWomen=ids.filter(id=>getP(id).gender==="F").length;
+ if(totalWomen<minW*sizes.length)return showMsg("Pas assez de femmes présentes pour garantir "+minW+" femme(s) sur le terrain dans chaque équipe.","notice");
+ let best=null,bestScore=Infinity;
+ for(let i=0;i<18000;i++){
+  const c=buildCandidate(ids,sizes,minW);if(!c)continue;
+  const sc=scoreTeams(c);if(sc<bestScore){bestScore=sc;best=c}
+ }
+ if(!best)return showMsg("Impossible de construire une répartition respectant les contraintes avec ces joueurs.","notice");
+ currentTeams=best;
+ document.getElementById("sessionMessage").innerHTML='<div class="notice ok">Équipes générées. Les règles de répartition ont été prises en compte.</div>';
+ renderResult();
+ save();
+}
+function renderResult(){
+ const date=document.getElementById("sessionDate").value;
+ document.getElementById("result").innerHTML=`<div class="card"><h2>Équipes — ${date}</h2><div class="teams">${currentTeams.map((t,i)=>`
+ <div class="team"><h3>Équipe ${i+1}</h3><div class="small">${t.size===5?"5 joueurs · 4 sur le terrain + 1 remplaçant":"4 joueurs · tous sur le terrain"}</div>
+ ${t.ids.map(id=>`<div class="member ${t.size===5&&id===t.sub?"sub":"court"}">${esc(getP(id).first)} ${t.size===5&&id===t.sub?"🔄 REMPLAÇANT":"🏐"}<br><span class="small">${esc(getP(id).level)} · ${esc(getP(id).position)}</span></div>`).join("")}
+ ${t.size===5?`<div class="actions"><button class="secondary" onclick="rotateSub(${i})">🔁 Tour suivant</button></div>`:""}
+ </div>`).join("")}</div>
+ <div class="actions"><button class="primary" onclick="saveSession()">💾 Enregistrer cette session</button></div></div>`;
+}
+function rotateSub(teamIndex){
+ const t=currentTeams[teamIndex];if(!t||t.size!==5)return;
+ const eligible=t.ids.filter(id=>id!==t.sub && t.ids.filter(x=>x!==id).filter(x=>getP(x).gender==="F").length>=Math.max(1,parseInt(document.getElementById("minWomen").value)||1));
+ if(!eligible.length)return alert("Impossible de faire tourner le remplaçant sans supprimer la contrainte de femmes sur le terrain.");
+ const next=eligible.sort((a,b)=>subCount(a)-subCount(b))[0];
+ t.sub=next;t.active=t.ids.filter(x=>x!==next);
+ const p=getP(next);p.subUses=(p.subUses||0)+1;
+ renderResult();save();
+}
+function saveSession(){
+ if(!currentTeams.length)return;
+ const rec={id:Date.now(),date:document.getElementById("sessionDate").value,teams:currentTeams.map(t=>t.ids.slice()),sizes:currentTeams.map(t=>t.size),substitutes:currentTeams.map(t=>t.size===5?t.sub:null),savedAt:new Date().toISOString()};
+ history.push(rec);if(history.length>100)history.shift();
+ save();renderHistory();
+ alert("Session enregistrée dans l'historique.");
+}
+function renderHistory(){
+ const box=document.getElementById("historyList");
+ if(!history.length){box.innerHTML='<div class="empty">Aucune session enregistrée.</div>';return}
+ box.innerHTML=history.slice().reverse().map((h,idx)=>`<div class="card"><b>${esc(h.date||"Date inconnue")}</b><div class="small">${h.teams.length} équipe(s)</div>
+ ${h.teams.map((t,i)=>`<div class="member"><b>Équipe ${i+1}</b> — ${t.map(id=>esc(getP(id)?.first||"Joueur supprimé")).join(", ")}</div>`).join("")}</div>`).join("");
+}
+function clearHistory(){if(confirm("Effacer tout l'historique ?")){history=[];players.forEach(p=>p.subUses=0);save();renderHistory()}}
+function showMsg(msg,cls){document.getElementById("sessionMessage").innerHTML=`<div class="${cls}">${msg}</div>`}
+renderPlayers();renderSession();renderHistory();
+</script>
+</body>
+</html>
